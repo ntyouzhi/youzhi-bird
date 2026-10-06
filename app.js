@@ -1,4 +1,6 @@
 const birds={crane:'丹顶鹤',mallard:'绿头鸭',eagle:'老鹰'};
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
 const requested=new URLSearchParams(location.search).get('bird'),bird=Object.hasOwn(birds,requested)?requested:'crane';
 document.body.dataset.bird=bird;document.title='鸟类观察 · '+birds[bird];document.getElementById('view').setAttribute('aria-label',birds[bird]+'三维模型');
 document.querySelector(`nav [data-bird="${bird}"]`).setAttribute('aria-current','page');
