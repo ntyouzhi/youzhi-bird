@@ -10,6 +10,11 @@ const requested=new URLSearchParams(location.search).get('bird'),bird=Object.has
 document.body.dataset.bird=bird;document.title='鸟类观察 · '+birds[bird];document.getElementById('view').setAttribute('aria-label',birds[bird]+'三维模型');
 document.querySelector(`nav [data-bird="${bird}"]`).setAttribute('aria-current','page');
 document.getElementById('birdIntro').innerHTML=`<h3>${introductions[bird].title}</h3><p>${introductions[bird].text}</p>`;
+document.querySelector('#modelPlaceholder b').textContent=`正在准备${birds[bird]}模型…`;
 try{await import('./'+bird+'.js');document.getElementById('speed').disabled=false;}catch(error){document.getElementById('status').textContent='加载失败，请刷新重试';console.error(error);}
+
+const readyButton=document.getElementById('play');
+const announceReady=()=>{if(!readyButton.disabled){document.getElementById('modelPlaceholder').hidden=true;parent.postMessage({type:'bird-observation-ready',bird},'*');return true;}return false;};
+if(!announceReady()){const readyObserver=new MutationObserver(()=>{if(announceReady())readyObserver.disconnect();});readyObserver.observe(readyButton,{attributes:true,attributeFilter:['disabled']});}
 
 if(new URLSearchParams(location.search).get('local')==='1'){document.querySelectorAll('nav a').forEach(a=>{a.href+='&local=1'});const heartbeat=()=>fetch('/__heartbeat',{cache:'no-store'}).catch(()=>{});heartbeat();setInterval(heartbeat,20000);}
