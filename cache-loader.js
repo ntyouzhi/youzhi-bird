@@ -1,4 +1,12 @@
-async function checkedFetch(url){const response=await fetch(url);if(!response.ok)throw Error('资源加载失败：'+url);return response;}
+const CACHE_NAME='bird-observation-assets-v3';
+
+async function checkedFetch(url){
+ const request=new Request(url);
+ if('caches' in globalThis){
+  try{const cache=await caches.open(CACHE_NAME),cached=await cache.match(request);if(cached)return cached;const response=await fetch(request);if(!response.ok)throw Error('资源加载失败：'+url);cache.put(request,response.clone()).catch(()=>{});return response;}catch(error){if(error instanceof Error&&error.message.startsWith('资源加载失败'))throw error;}
+ }
+ const response=await fetch(request);if(!response.ok)throw Error('资源加载失败：'+url);return response;
+}
 export async function loadMesh(folder,meta){
  if(meta.meshFile)return (await checkedFetch(folder+'/'+meta.meshFile)).arrayBuffer();
  const buffers=await Promise.all(meta.meshChunks.map(async name=>(await checkedFetch(folder+'/'+name)).arrayBuffer()));
@@ -6,10 +14,10 @@ export async function loadMesh(folder,meta){
  for(const buffer of buffers){bytes.set(new Uint8Array(buffer),offset);offset+=buffer.byteLength;}
  return bytes.buffer;
 }
-export async function loadCache(folder,meta){
+export async function loadCache(folder,meta,onProgress){
  let chunk=0,reader;
  const compressed=new ReadableStream({
-  async pull(controller){try{while(true){if(!reader){if(chunk>=meta.animationChunks.length){controller.close();return;}reader=(await checkedFetch(folder+'/'+meta.animationChunks[chunk++])).body.getReader();}const result=await reader.read();if(result.done){reader.releaseLock();reader=null;continue;}controller.enqueue(result.value);return;}}catch(error){controller.error(error);}},
+  async pull(controller){try{while(true){if(!reader){if(chunk>=meta.animationChunks.length){controller.close();return;}reader=(await checkedFetch(folder+'/'+meta.animationChunks[chunk++])).body.getReader();}const result=await reader.read();if(result.done){reader.releaseLock();reader=null;onProgress?.(chunk,meta.animationChunks.length);continue;}controller.enqueue(result.value);return;}}catch(error){controller.error(error);}},
   async cancel(){await reader?.cancel();}
  });
  const buffer=await new Response(compressed.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
