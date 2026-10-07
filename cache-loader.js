@@ -1,4 +1,4 @@
-const CACHE_NAME='bird-observation-assets-v3';
+const CACHE_NAME='bird-observation-assets-v4';
 
 async function checkedFetch(url){
  const request=new Request(url);
